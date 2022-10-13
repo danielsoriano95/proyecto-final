@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
-const Productos = require('./models/User');
+const jwt = require ('jsonwebtoken');
 var cors = require('cors');
 
 mongoose
@@ -30,8 +30,10 @@ const Movimiento = require("./models/movimiento");
 
 //Rutas
 
-app.get('/home', function(){
-
+app.get('/llamar_usuario/:id', async function(req, res){
+  var id = req.params.id;
+  var u = await Users.findById(id);
+  res.send(u);
 });
 
 app.post('/validacion', async function(req, res){
@@ -40,6 +42,11 @@ app.post('/validacion', async function(req, res){
   var mensaje1 = "no existe el email suministrado";
   var mensaje2 = "no es correcto";
   
+  //if (!user) return res.status(401).send('El correo no existe');
+  //if (u.password !== user.password) return res.status(401).send('wrong password');
+
+  //jwt.sign({_id: user._id}, 'secretKey');
+  //return res.status(200).json({token});
 
   if (user == null){
     res.send({
@@ -57,9 +64,29 @@ app.post('/validacion', async function(req, res){
   }
 });
 
+/*
+function verifyToken(req, res, next){
+  if (!req.headers.authorization){
+      return res.status(401).send('Unauthorize request');
+  }
+
+  const token = req.headers.authorization.split('')[1]
+  if  (token === 'null'){
+      return res.status(401).send('Unauthorize request');
+  }
+  
+  const payload = jwt.verify(token, 'secretKey');
+  console.log(payload);
+
+  req.userId = payload._id;
+  next();
+
+}
+*/
+
 app.post('/crear_usuario', async function (req,res) {
-  var u = req.body; 
-  var user = new Users(u);
+  const {email, password} = req.body; 
+  const user = new Users({email, password});
   await user.save();
   console.log(u) 
 
@@ -73,6 +100,12 @@ app.post('/crear_usuario', async function (req,res) {
 app.get('/obtener_movimiento', async function(req,res){
   var m = await Movimiento.find();
   res.send(m)
+})
+
+app.get('/obtener_grafica', async function(req,res){
+  var g = await Movimiento.find().select({"concepto":1 ,"monto":1 , "_id":0});
+  console.log(g)
+  res.send(g)
 })
 
 app.post('/crear_movimiento', async function(req,res){
